@@ -10,7 +10,7 @@ router = APIRouter()
 async def root():
     """Root endpoint that returns a welcome message"""
     return {
-        "message": "Welcome to MuleSoft Dependency Scanner API!", 
+        "message": "Welcome to Mule Cracks!", 
         "status": "running"
     }
 

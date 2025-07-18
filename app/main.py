@@ -39,13 +39,13 @@ app.include_router(router)
 @app.on_event("startup")
 async def startup_event():
     """Application startup event"""
-    logging.info("Starting MuleSoft Dependency Scanner API")
+    logging.info("Starting Mule Cracks")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Application shutdown event"""
-    logging.info("Shutting down MuleSoft Dependency Scanner API")
+    logging.info("Shutting down Mule Cracks")
 
 
 if __name__ == "__main__":

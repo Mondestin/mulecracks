@@ -9,7 +9,7 @@ class Settings:
     """Application settings configuration"""
     
     # API Configuration
-    API_TITLE: str = "MuleSoft Dependency Scanner API"
+    API_TITLE: str = "Mule Cracks"
     API_DESCRIPTION: str = "API to scan MuleSoft projects and show dependency versions from pom.xml files"
     API_VERSION: str = "1.0.0"
     
