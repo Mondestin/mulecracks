@@ -1,4 +1,4 @@
-# MuleGrade
+# Mule Cracks
 
 A FastAPI application that scans MuleSoft projects and analyzes flows, endpoints, and processors.
 
