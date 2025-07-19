@@ -8,7 +8,7 @@ import logging
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
-from app.models.flows import FlowInfo, EndpointInfo
+from app.models.flows import FlowInfo, EndpointInfo, SubFlowInfo
 from app.config.processors import PROCESSOR_KEYS, get_processor_info
 
 logger = logging.getLogger(__name__)
@@ -116,11 +116,11 @@ class FlowParser:
                 flow_elements = mule_data['flow']
                 if isinstance(flow_elements, list):
                     for flow_element in flow_elements:
-                        flow_info = FlowParser._create_flow_info_from_element(flow_element, file_path)
+                        flow_info = FlowParser._create_flow_info_from_element(flow_element, file_path, flow_data)
                         if flow_info:
                             flow_infos.append(flow_info)
                 else:
-                    flow_info = FlowParser._create_flow_info_from_element(flow_elements, file_path)
+                    flow_info = FlowParser._create_flow_info_from_element(flow_elements, file_path, flow_data)
                     if flow_info:
                         flow_infos.append(flow_info)
         else:
@@ -129,24 +129,25 @@ class FlowParser:
                 flow_elements = flow_data['flow']
                 if isinstance(flow_elements, list):
                     for flow_element in flow_elements:
-                        flow_info = FlowParser._create_flow_info_from_element(flow_element, file_path)
+                        flow_info = FlowParser._create_flow_info_from_element(flow_element, file_path, flow_data)
                         if flow_info:
                             flow_infos.append(flow_info)
                 else:
-                    flow_info = FlowParser._create_flow_info_from_element(flow_elements, file_path)
+                    flow_info = FlowParser._create_flow_info_from_element(flow_elements, file_path, flow_data)
                     if flow_info:
                         flow_infos.append(flow_info)
         
         return flow_infos
     
     @staticmethod
-    def _create_flow_info_from_element(flow_element: Dict[str, Any], file_path: str) -> FlowInfo:
+    def _create_flow_info_from_element(flow_element: Dict[str, Any], file_path: str, flow_data: Dict[str, Any] = None) -> FlowInfo:
         """
         Create FlowInfo from a flow element
         
         Args:
             flow_element: Flow XML element
             file_path: Path to the flow file
+            flow_data: Parsed flow XML data (optional, for sub-flow extraction)
             
         Returns:
             FlowInfo object
@@ -162,8 +163,13 @@ class FlowParser:
         # Extract error handlers
         error_handlers = FlowParser._extract_error_handlers(flow_element)
         
-        # Extract sub-flows
-        sub_flows = FlowParser._extract_sub_flows(flow_element)
+        # Extract flow-refs (references to other flows)
+        flow_refs = FlowParser._extract_flow_refs(flow_element)
+        
+        # Extract sub-flows (sub-flows defined in this file)
+        sub_flows = []
+        if flow_data:
+            sub_flows = FlowParser._extract_sub_flows_from_file(flow_data, file_path)
         
         return FlowInfo(
             name=flow_name,
@@ -172,6 +178,7 @@ class FlowParser:
             processors_count=processors_count,
             processors_found=processors_found,
             error_handlers=error_handlers,
+            flow_refs=flow_refs,
             sub_flows=sub_flows
         )
     
@@ -217,6 +224,7 @@ class FlowParser:
                 processors_count=0,
                 processors_found=[],
                 error_handlers=[],
+                flow_refs=[],
                 sub_flows=[]
             )
         
@@ -233,8 +241,11 @@ class FlowParser:
         # Extract error handlers
         error_handlers = FlowParser._extract_error_handlers(flow_element)
         
-        # Extract sub-flows
-        sub_flows = FlowParser._extract_sub_flows(flow_element)
+        # Extract flow-refs (references to other flows)
+        flow_refs = FlowParser._extract_flow_refs(flow_element)
+        
+        # Extract sub-flows (sub-flows defined in this file)
+        sub_flows = FlowParser._extract_sub_flows_from_file(flow_data, file_path)
         
         return FlowInfo(
             name=flow_name,
@@ -243,6 +254,7 @@ class FlowParser:
             processors_count=processors_count,
             processors_found=processors_found,
             error_handlers=error_handlers,
+            flow_refs=flow_refs,
             sub_flows=sub_flows
         )
     
@@ -378,29 +390,82 @@ class FlowParser:
         return error_handlers
     
     @staticmethod
-    def _extract_sub_flows(flow_element: Dict[str, Any]) -> List[str]:
+    def _extract_flow_refs(flow_element: Dict[str, Any]) -> List[str]:
         """
-        Extract sub-flow references from flow element
+        Extract flow-ref references from flow element
         
         Args:
             flow_element: Flow XML element
             
         Returns:
-            List of sub-flow names
+            List of flow-ref names
         """
-        sub_flows = []
+        flow_refs = []
         
         if 'flow-ref' in flow_element:
             flow_ref_data = flow_element['flow-ref']
             if isinstance(flow_ref_data, list):
                 for flow_ref in flow_ref_data:
                     if '@name' in flow_ref:
-                        sub_flows.append(flow_ref['@name'])
+                        flow_refs.append(flow_ref['@name'])
             else:
                 if '@name' in flow_ref_data:
-                    sub_flows.append(flow_ref_data['@name'])
+                    flow_refs.append(flow_ref_data['@name'])
+        
+        return flow_refs
+    
+    @staticmethod
+    def _extract_sub_flows_from_file(flow_data: Dict[str, Any], file_path: str) -> List[SubFlowInfo]:
+        """
+        Extract sub-flows defined in the file
+        
+        Args:
+            flow_data: Parsed flow XML data
+            file_path: Path to the flow file
+            
+        Returns:
+            List of SubFlowInfo objects
+        """
+        sub_flows = []
+        
+        # Check if we have a mule root element
+        if 'mule' in flow_data:
+            mule_data = flow_data['mule']
+            if 'sub-flow' in mule_data:
+                sub_flow_elements = mule_data['sub-flow']
+                if isinstance(sub_flow_elements, list):
+                    for sub_flow_element in sub_flow_elements:
+                        sub_flow_info = FlowParser._create_sub_flow_info(sub_flow_element)
+                        if sub_flow_info:
+                            sub_flows.append(sub_flow_info)
+                else:
+                    sub_flow_info = FlowParser._create_sub_flow_info(sub_flow_elements)
+                    if sub_flow_info:
+                        sub_flows.append(sub_flow_info)
         
         return sub_flows
+    
+    @staticmethod
+    def _create_sub_flow_info(sub_flow_element: Dict[str, Any]) -> SubFlowInfo:
+        """
+        Create SubFlowInfo from a sub-flow element
+        
+        Args:
+            sub_flow_element: Sub-flow XML element
+            
+        Returns:
+            SubFlowInfo object
+        """
+        sub_flow_name = sub_flow_element.get('@name', 'Unknown Sub-Flow')
+        
+        # Count processors and collect their names
+        processors_count, processors_found = FlowParser._count_processors(sub_flow_element)
+        
+        return SubFlowInfo(
+            name=sub_flow_name,
+            processors_count=processors_count,
+            processors_found=processors_found
+        )
     
     @staticmethod
     def _extract_endpoint_from_flow_name(flow_name: str) -> Optional[EndpointInfo]:

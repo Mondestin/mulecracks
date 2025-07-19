@@ -15,6 +15,13 @@ class EndpointInfo(BaseModel):
     listener_config: Optional[Dict[str, Any]] = None
 
 
+class SubFlowInfo(BaseModel):
+    """Model for individual sub-flow information"""
+    name: str
+    processors_count: int
+    processors_found: List[str]  # List of processor names found in the sub-flow
+
+
 class FlowInfo(BaseModel):
     """Model for individual flow information"""
     name: str
@@ -23,7 +30,8 @@ class FlowInfo(BaseModel):
     processors_count: int
     processors_found: List[str]  # List of processor names found in the flow
     error_handlers: List[str]
-    sub_flows: List[str]
+    flow_refs: List[str]  # References to other flows (flow-ref components)
+    sub_flows: List[SubFlowInfo]  # Sub-flows defined within this file
 
 
 class ProjectFlowsResponse(BaseModel):
