@@ -44,6 +44,7 @@ MULESOFT_PROCESSORS = {
     # Note: ee:message, ee:set-payload, ee:variables, ee:set-variable are NOT processors
     # They are structural elements within ee:transform (DataWeave transformations)
     # Note: 'error-handler' is NOT a processor - it's a structural element that contains error handling logic
+    # Note: 'http:response' inside 'http:listener' is NOT a processor - it's a structural configuration element
     
     # Error Handling Processors
     'raise-error': {'name': 'Raise Error', 'category': 'Error Handling'},

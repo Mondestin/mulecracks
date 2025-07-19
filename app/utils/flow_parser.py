@@ -335,7 +335,7 @@ class FlowParser:
         return count, processors_found
     
     @staticmethod
-    def _count_processors_recursive(element: Any, processors_found: List[str], count: int = 0) -> int:
+    def _count_processors_recursive(element: Any, processors_found: List[str], count: int = 0, parent_key: str = None) -> int:
         """
         Recursively count processors in an element and collect their names
         
@@ -343,6 +343,7 @@ class FlowParser:
             element: XML element to search
             processors_found: List to collect processor names
             count: Current count of processors
+            parent_key: Parent element key to check for structural exclusions
             
         Returns:
             Total number of processors found
@@ -350,17 +351,22 @@ class FlowParser:
         if isinstance(element, dict):
             # Check if this element is a processor
             for key in element.keys():
-                if key in PROCESSOR_KEYS:
+                # Skip http:response when it's nested within http:listener (structural element)
+                if key == 'http:response' and parent_key == 'http:listener':
+                    # Don't count http:response as a processor when inside http:listener
+                    pass
+                elif key in PROCESSOR_KEYS:
                     count += 1
                     processors_found.append(key)
+                
                 # Always recursively search nested elements (even if current key is a processor)
                 if isinstance(element[key], (dict, list)):
-                    count = FlowParser._count_processors_recursive(element[key], processors_found, count)
+                    count = FlowParser._count_processors_recursive(element[key], processors_found, count, key)
         
         elif isinstance(element, list):
             # Handle lists of elements
             for item in element:
-                count = FlowParser._count_processors_recursive(item, processors_found, count)
+                count = FlowParser._count_processors_recursive(item, processors_found, count, parent_key)
         
         return count
     
