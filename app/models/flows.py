@@ -21,6 +21,7 @@ class FlowInfo(BaseModel):
     file_path: str
     endpoints: List[EndpointInfo]
     processors_count: int
+    processors_found: List[str]  # List of processor names found in the flow
     error_handlers: List[str]
     sub_flows: List[str]
 

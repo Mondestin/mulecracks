@@ -156,8 +156,8 @@ class FlowParser:
         # Extract endpoints
         endpoints = FlowParser._extract_endpoints(flow_element, flow_name)
         
-        # Count processors
-        processors_count = FlowParser._count_processors(flow_element)
+        # Count processors and collect their names
+        processors_count, processors_found = FlowParser._count_processors(flow_element)
         
         # Extract error handlers
         error_handlers = FlowParser._extract_error_handlers(flow_element)
@@ -170,6 +170,7 @@ class FlowParser:
             file_path=file_path,
             endpoints=endpoints,
             processors_count=processors_count,
+            processors_found=processors_found,
             error_handlers=error_handlers,
             sub_flows=sub_flows
         )
@@ -214,6 +215,7 @@ class FlowParser:
                 file_path=file_path,
                 endpoints=[],
                 processors_count=0,
+                processors_found=[],
                 error_handlers=[],
                 sub_flows=[]
             )
@@ -225,8 +227,8 @@ class FlowParser:
         # Extract endpoints
         endpoints = FlowParser._extract_endpoints(flow_element, flow_name)
         
-        # Count processors
-        processors_count = FlowParser._count_processors(flow_element)
+        # Count processors and collect their names
+        processors_count, processors_found = FlowParser._count_processors(flow_element)
         
         # Extract error handlers
         error_handlers = FlowParser._extract_error_handlers(flow_element)
@@ -239,6 +241,7 @@ class FlowParser:
             file_path=file_path,
             endpoints=endpoints,
             processors_count=processors_count,
+            processors_found=processors_found,
             error_handlers=error_handlers,
             sub_flows=sub_flows
         )
@@ -305,25 +308,28 @@ class FlowParser:
         )
     
     @staticmethod
-    def _count_processors(flow_element: Dict[str, Any]) -> int:
+    def _count_processors(flow_element: Dict[str, Any]) -> tuple[int, List[str]]:
         """
-        Count processors in a flow element recursively
+        Count processors in a flow element recursively and collect their names
         
         Args:
             flow_element: Flow XML element
             
         Returns:
-            Number of processors
+            Tuple of (processor_count, list_of_processor_names)
         """
-        return FlowParser._count_processors_recursive(flow_element)
+        processors_found = []
+        count = FlowParser._count_processors_recursive(flow_element, processors_found)
+        return count, processors_found
     
     @staticmethod
-    def _count_processors_recursive(element: Any, count: int = 0) -> int:
+    def _count_processors_recursive(element: Any, processors_found: List[str], count: int = 0) -> int:
         """
-        Recursively count processors in an element
+        Recursively count processors in an element and collect their names
         
         Args:
             element: XML element to search
+            processors_found: List to collect processor names
             count: Current count of processors
             
         Returns:
@@ -334,14 +340,15 @@ class FlowParser:
             for key in element.keys():
                 if key in PROCESSOR_KEYS:
                     count += 1
+                    processors_found.append(key)
                 # Always recursively search nested elements (even if current key is a processor)
                 if isinstance(element[key], (dict, list)):
-                    count = FlowParser._count_processors_recursive(element[key], count)
+                    count = FlowParser._count_processors_recursive(element[key], processors_found, count)
         
         elif isinstance(element, list):
             # Handle lists of elements
             for item in element:
-                count = FlowParser._count_processors_recursive(item, count)
+                count = FlowParser._count_processors_recursive(item, processors_found, count)
         
         return count
     
