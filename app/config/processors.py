@@ -24,10 +24,8 @@ MULESOFT_PROCESSORS = {
     'remove-session-variable': {'name': 'Remove Session Variable', 'category': 'Data Manipulation'},
     'message-enricher': {'name': 'Message Enricher', 'category': 'Data Manipulation'},
     'ee:transform': {'name': 'DataWeave Transform', 'category': 'Data Manipulation'},
-    'ee:message': {'name': 'DataWeave Message', 'category': 'Data Manipulation'},
-    'ee:set-payload': {'name': 'DataWeave Set Payload', 'category': 'Data Manipulation'},
-    'ee:variables': {'name': 'DataWeave Variables', 'category': 'Data Manipulation'},
-    'ee:set-variable': {'name': 'DataWeave Set Variable', 'category': 'Data Manipulation'},
+    # Note: ee:message, ee:set-payload, ee:variables, ee:set-variable are NOT processors
+    # They are structural elements within ee:transform
     
     # Flow Control Processors
     'flow': {'name': 'Flow', 'category': 'Flow Control'},
@@ -43,9 +41,12 @@ MULESOFT_PROCESSORS = {
     'quartz:inbound-endpoint': {'name': 'Quartz Inbound Endpoint', 'category': 'Flow Control'},
     
     # Note: 'when' and 'otherwise' are NOT processors - they are structural elements
+    # Note: ee:message, ee:set-payload, ee:variables, ee:set-variable are NOT processors
+    # They are structural elements within ee:transform (DataWeave transformations)
+    # Note: 'error-handler' is NOT a processor - it's a structural element that contains error handling logic
     
     # Error Handling Processors
-    'error-handler': {'name': 'Error Handler', 'category': 'Error Handling'},
+    'raise-error': {'name': 'Raise Error', 'category': 'Error Handling'},
     'on-error-continue': {'name': 'On Error Continue', 'category': 'Error Handling'},
     'on-error-propagate': {'name': 'On Error Propagate', 'category': 'Error Handling'},
     'circuit-breaker': {'name': 'Circuit Breaker', 'category': 'Error Handling'},
